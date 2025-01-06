@@ -1,0 +1,11 @@
+#### basic ###
+#.idea/.name
+#.idea/inspectionProfiles/*
+#.idea/dataSources.xml
+#.idea/.gitignore
+#.idea/misc.xml
+#.idea/modules.xml
+#.idea/vcs.xml
+#.python-version
+#src/config/config.py
+#*/__init__.py
