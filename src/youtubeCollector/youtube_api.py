@@ -1,41 +1,71 @@
 import os
+import io
 
-import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
+import config.conf as config
+
+from youtube_transcript_api import YouTubeTranscriptApi
+
+import mkFilePath
 
 scopes = ["https://www.googleapis.com/auth/youtube.force-ssl"]
 
-def main():
-    # Disable OAuthlib's HTTPS verification when running locally.
-    # *DO NOT* leave this option enabled in production.
+
+def get_search_res(search_term):
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
     api_service_name = "youtube"
     api_version = "v3"
-    client_secrets_file = "YOUR_CLIENT_SECRET_FILE.json"
 
-    # Get credentials and create an API client
-    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-        client_secrets_file, scopes)
-    credentials = flow.run_console()
     youtube = googleapiclient.discovery.build(
-        api_service_name, api_version, credentials=credentials)
+        api_service_name, api_version, developerKey=config.UserIdentifyCode.api_key)
 
     request = youtube.search().list(
         part="snippet",
         maxResults=1,
         order="viewCount",
-        q="sbs 드라마",
+        q=search_term,
         regionCode="KR",
         relevanceLanguage="ko",
-        type="video",
-        videoCaption="closedCaption"
+        type="video"
     )
     response = request.execute()
 
-    print(response)
+    return response
+
+
+def get_video_ids(search_term):
+    video_ids = [item["id"]["videoId"] for item in get_search_res(search_term)["items"]]
+    return video_ids
+
+
+def get_video_script():
+    video_ids = get_video_ids("sbs 드라마")
+
+    for video_id in video_ids:
+        fh = io.FileIO("YOUR_FILE", "wb")
+
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        transcript = transcript_list.find_transcript(['ko'])
+
+        # 번역 기능
+        # translated_transcript = transcript.translate('ko')
+        script = transcript.fetch()
+        print(script)
+
+        sentences = []
+        for sentence in script:
+            text = sentence['text'].replace('\n', ' ')
+            sentences.append(text)
+
+        # fh.write(transcript)
+        # download = MediaIoBaseDownload(fh, request)
+        # complete = False
+        # while not complete:
+        #     status, complete = download.next_chunk()
 
 
 if __name__ == "__main__":
-    main()
+    get_video_ids("sbs 드라마")
+    # get_video_script()
