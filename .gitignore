@@ -1,4 +1,4 @@
 #### basic ###
 .idea/
 .python-version
-conf
+src/config/conf.py
