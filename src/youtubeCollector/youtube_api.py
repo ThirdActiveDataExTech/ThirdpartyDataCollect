@@ -1,9 +1,9 @@
 import os
-import io
 
 import googleapiclient.discovery
 import googleapiclient.errors
 import config.conf as config
+import google_auth_oauthlib.flow
 
 from youtube_transcript_api import YouTubeTranscriptApi
 
@@ -13,20 +13,22 @@ scopes = ["https://www.googleapis.com/auth/youtube.force-ssl"]
 
 
 class YouTubeApi:
-    def __init__(self):
+    def __init__(self, search_term):
+        self.search_term = search_term
         os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
-        api_service_name = "youtube"
-        api_version = "v3"
+        self.api_service_name = "youtube"
+        self.api_version = "v3"
         self.youtube = googleapiclient.discovery.build(
-            api_service_name, api_version, developerKey=config.UserIdentifyCode.api_key)
+            self.api_service_name, self.api_version, developerKey=config.UserIdentifyCode.api_key)
+        self.client_secrets_file = config.UserIdentifyCode.secrets_user_identify
 
-    def get_search_res(self, search_term):
+    def get_video_list(self):
         request = self.youtube.search().list(
             part="snippet",
-            maxResults=1,
+            maxResults=5,
             order="viewCount",
-            q=search_term,
+            q=self.search_term,
             regionCode="KR",
             relevanceLanguage="ko",
             type="video"
@@ -35,13 +37,13 @@ class YouTubeApi:
 
         return response
 
-    def get_video_ids(self, search_term):
-        video_list = self.get_search_res(search_term)
+    def get_video_ids(self):
+        video_list = self.get_video_list()
         video_ids = [item["id"]["videoId"] for item in video_list["items"]]
         return video_ids
 
     def get_video_script(self):
-        video_ids = self.get_video_ids("sbs 드라마")
+        video_ids = self.get_video_ids()
 
         for video_id in video_ids:
             # fh = io.FileIO("YOUR_FILE", "wb")
@@ -65,20 +67,46 @@ class YouTubeApi:
             # while not complete:
             #     status, complete = download.next_chunk()
 
-    def get_reply(self, search_term):
-        for video_id in self.get_video_ids(search_term):
+    def get_reply(self):
+        for video_id in self.get_video_ids():
+            print(video_id)
             request = self.youtube.commentThreads().list(
                 part="snippet,replies",
                 maxResults=5,
-                videoId=video_id
+                videoId='QbLhA5v4GfU'
             )
             response = request.execute()
 
             print(response)
 
+    def get_video_inspect(self):
+        for video_id in self.get_video_ids():
+            flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+                self.client_secrets_file, scopes)
+            credentials = flow.run_local_server()
+            youtube = googleapiclient.discovery.build(
+                self.api_service_name, self.api_version, credentials=credentials)
+
+            request = youtube.videos().list(
+                part="snippet,contentDetails,statistics",
+                id=video_id
+            )
+            response = request.execute()
+
+            print(response)
+
+    def get_video_thumbnail(self):
+        video_list = self.get_video_list()
+        thumbnail = [item["snippet"]["thumbnails"] for item in video_list["items"]]
+        print(thumbnail)
+
 
 if __name__ == "__main__":
-    youtube_api = YouTubeApi()
-    print(youtube_api.get_video_ids("sbs 드라마"))
+    youtube_api = YouTubeApi("sbs 드라마")
+    # print(youtube_api.get_video_ids())
+    # print(youtube_api.get_video_list())
     # youtube_api.get_video_script()
     # youtube_api.get_reply()
+
+    youtube_api.get_video_thumbnail()
+    # youtube_api.get_video_inspect()
