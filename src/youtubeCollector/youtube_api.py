@@ -7,18 +7,27 @@ import yt_dlp
 import config.conf as config
 
 from youtube_transcript_api import YouTubeTranscriptApi
+from openai import OpenAI
 
 
+# Youtube API를 이용해 특정 검색어에 대한 결과 리스트와 각 영상에 대한 데이터를 크롤링하는 모듈 #
+
+
+# 비디오 자막을 리턴하는 함수
 def get_video_script(video_id):
     # fh = io.FileIO("YOUR_FILE", "wb")
+    transcript_list = []
 
-    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+    try:
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+    except:
+        return None
     transcript = transcript_list.find_transcript(['ko'])
 
     # 번역 기능
     # translated_transcript = transcript.translate('ko')
     script = transcript.fetch()
-    print(script)
+    # print(script)
 
     sentences = []
     for sentence in script:
@@ -33,11 +42,31 @@ def get_video_script(video_id):
     return sentences
 
 
+# ai가 요약한 영상 내용을 리턴하는 함수
+def get_video_summary(video_id):
+    script = get_video_script(video_id)
+    client = OpenAI(
+        api_key=config.UserIdentifyCode.openai_key
+    )
+
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        store=True,
+        messages=[
+            {"role": "user", "content": f"{script}"}
+        ]
+    )
+
+    return completion.choices[0].message
+
+
+# 비디오 url을 리턴하는 함수
 def get_video_url(video_id):
-    url = "https://www.youtube.com/watch?v="+video_id
+    url = "https://www.youtube.com/watch?v=" + video_id
     return url
 
 
+# 비디오 mp3를 추출해서 리턴하는 함수
 def get_video_mp3(video_id):
     url = get_video_url(video_id)
     output_dir = os.path.join('./tmp/', 'mp3test', '%(title)s.%(ext)s')
@@ -48,7 +77,7 @@ def get_video_mp3(video_id):
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',  # 영상을 오디오 파일로 추출
                 'preferredcodec': 'mp3',  # 오디오 파일 포맷을 mp3 파일로 설정
-                'preferredquality': '192', #오디오 품질 설정 192k
+                'preferredquality': '192',  # 오디오 품질 설정 192k
             }],
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -65,10 +94,12 @@ class YouTubeApi:
         self.youtube = googleapiclient.discovery.build(
             self.api_service_name, self.api_version, developerKey=config.UserIdentifyCode.api_key)
 
-    def get_video_list(self):
+    # 검색결과 리스트를 반환하는 함수
+    def get_video_id_list(self):
+        video_id_list = []
         request = self.youtube.search().list(
-            part="snippet",
-            maxResults=5,
+            part="id",
+            maxResults=1,
             order="viewCount",
             q=self.search_term,
             regionCode="KR",
@@ -77,66 +108,65 @@ class YouTubeApi:
         )
         response = request.execute()
 
-        return response
+        for item in response['items']:
+            video_id_list.append(item['id']['videoId'])
 
-    def get_video_ids(self):
-        video_list = self.get_video_list()
-        video_ids = [item["id"]["videoId"] for item in video_list["items"]]
-        return video_ids
+        return video_id_list
 
-    def get_reply(self):
+    # 검색 결과 리스트의 각 영상에 대한 상세정보를 반환하는 함수
+    def get_video_detail(self):
+        video_detail = {}
+        video_id_list = self.get_video_id_list()
+        for video_id in video_id_list:
+
+            request = self.youtube.videos().list(
+                part="snippet,statistics",
+                id=video_id
+            )
+            response = request.execute()
+
+            extracted_data = {
+                "title": response["items"][0]["snippet"]["title"],
+                "thumbnail_url": response["items"][0]["snippet"]["thumbnails"]["default"]["url"],
+                "channel_title": response["items"][0]["snippet"]["channelTitle"],
+                "tags": response["items"][0]["snippet"]["tags"],
+                "view_count": response["items"][0]["statistics"]["viewCount"],
+                "like_count": response["items"][0]["statistics"]["likeCount"],
+                "video_url": get_video_url(video_id),
+                "video_script": get_video_script(video_id),
+                "video_summary": get_video_summary(video_id),
+                "video_mp3": get_video_mp3(video_id),
+                "reply": self.get_reply(video_id)
+            }
+
+            video_detail[video_id] = extracted_data
+        return video_detail
+
+    # 영상 댓글을 리스트로 반환하는 함수
+    def get_reply(self, video_id):
         request = self.youtube.commentThreads().list(
             part="snippet,replies",
             maxResults=5,
-            videoId='QbLhA5v4GfU'
+            videoId=video_id
         )
         response = request.execute()
-        return response
 
-    def get_video_inspect(self, video_id):
-        request = self.youtube.videos().list(
-            part="snippet,contentDetails,statistics",
-            id=video_id
-        )
-        response = request.execute()
-        return response
+        reply_list = [item["snippet"]["topLevelComment"]["snippet"]["textDisplay"] for item in response["items"]]
 
-    def get_video_thumbnail(self, video_id):
-        video_inspect = self.get_video_inspect(video_id)
-        thumbnail = [item["snippet"]["thumbnails"] for item in video_inspect["items"]]
-        return thumbnail
-
-    def get_video_viewcount(self, video_id):
-        video_inspect = self.get_video_inspect(video_id)
-        viewcount = [item["statistics"]["viewCount"] for item in video_inspect["items"]]
-        return viewcount
-
-    def get_video_like_count(self, video_id):
-        video_inspect = self.get_video_inspect(video_id)
-        like_count = [item["statistics"]["likeCount"] for item in video_inspect["items"]]
-        return like_count
-
-    def get_video_tag(self, video_id):
-        video_inspect = self.get_video_inspect(video_id)
-        tag = [item["snippet"]["tags"] for item in video_inspect["items"]]
-        return tag
+        return reply_list
 
 
 if __name__ == "__main__":
-    youtube_api = YouTubeApi("sbs 드라마")
-    test_video_id = "JQ2aoqwHmgE"
-    # print(youtube_api.get_video_list())
-    # print(youtube_api.get_video_ids())
-    #
-    # print(get_video_script(test_video_id))
+    youtube_api = YouTubeApi("뉴스")
+    test_video_id = "-PG6rqUTWkg"
+    # print(youtube_api.get_video_id_list("sbs 드라마"))
+    # print(youtube_api.get_video_detail(youtube_api.get_video_id_list("sbs 드라마")))
+
     # print(youtube_api.get_reply(test_video_id))
-    #
-    # print(youtube_api.get_video_inspect(test_video_id))
-    #
-    # print(youtube_api.get_video_thumbnail(test_video_id))
-    # print(youtube_api.get_video_viewcount(test_video_id))
-    # print(youtube_api.get_video_like_count(test_video_id))
-    # print(youtube_api.get_video_url(test_video_id))
-    # print(youtube_api.get_video_tag(test_video_id))
+
     # print(get_video_url(test_video_id))
-    get_video_mp3(test_video_id)
+    # get_video_mp3(test_video_id)
+    # get_video_summary(test_video_id)
+    # print(youtube_api.get_reply(test_video_id))
+
+    print(youtube_api.get_video_detail())
