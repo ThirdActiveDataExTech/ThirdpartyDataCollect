@@ -70,20 +70,20 @@ def get_video_url(video_id):
 def get_video_mp3(video_id):
     url = get_video_url(video_id)
     output_dir = os.path.join('./tmp/', 'mp3test', '%(title)s.%(ext)s')
+    ydl_opts = {  # youtube_dl 라이브러리 설정
+        'outtmpl': output_dir,
+        'format': 'bestaudio/best',  # 최고 품질로 추출
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',  # 영상을 오디오 파일로 추출
+            'preferredcodec': 'mp3',  # 오디오 파일 포맷을 mp3 파일로 설정
+            'preferredquality': '192',  # 오디오 품질 설정 192k
+        }],
+    }
     try:
-        ydl_opts = {  # youtube_dl 라이브러리 설정
-            'outtmpl': output_dir,
-            'format': 'bestaudio/best',  # 최고 품질로 추출
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',  # 영상을 오디오 파일로 추출
-                'preferredcodec': 'mp3',  # 오디오 파일 포맷을 mp3 파일로 설정
-                'preferredquality': '192',  # 오디오 품질 설정 192k
-            }],
-        }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
-    except Exception as e:
-        print(f"Error occurred: {e}")
+    except:
+        return None
 
 
 class YouTubeApi:
@@ -129,7 +129,7 @@ class YouTubeApi:
                 "title": response["items"][0]["snippet"]["title"],
                 "thumbnail_url": response["items"][0]["snippet"]["thumbnails"]["default"]["url"],
                 "channel_title": response["items"][0]["snippet"]["channelTitle"],
-                "tags": response["items"][0]["snippet"]["tags"],
+                "tags": response["items"][0]["snippet"].get("tags"),
                 "view_count": response["items"][0]["statistics"]["viewCount"],
                 "like_count": response["items"][0]["statistics"]["likeCount"],
                 "video_url": get_video_url(video_id),
