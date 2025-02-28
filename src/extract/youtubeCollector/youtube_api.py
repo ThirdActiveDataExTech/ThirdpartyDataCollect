@@ -46,7 +46,7 @@ def get_video_script(video_id):
 def get_video_summary(video_id):
     script = get_video_script(video_id)
     client = OpenAI(
-        api_key=config.UserIdentifyCode.openai_key
+        api_key=config.UserIdentifyCode.key
     )
 
     completion = client.chat.completions.create(
@@ -69,7 +69,7 @@ def get_video_url(video_id):
 # 비디오 mp3를 추출해서 리턴하는 함수
 def get_video_mp3(video_id):
     url = get_video_url(video_id)
-    output_dir = os.path.join('./tmp/', 'mp3test', '%(title)s.%(ext)s')
+    output_dir = os.path.join('tmp/', 'mp3test', '%(title)s.%(ext)s')
     ydl_opts = {  # youtube_dl 라이브러리 설정
         'outtmpl': output_dir,
         'format': 'bestaudio/best',  # 최고 품질로 추출
@@ -92,7 +92,7 @@ class YouTubeApi:
         self.api_service_name = "youtube"
         self.api_version = "v3"
         self.youtube = googleapiclient.discovery.build(
-            self.api_service_name, self.api_version, developerKey=config.UserIdentifyCode.api_key)
+            self.api_service_name, self.api_version, developerKey=config.UserIdentifyCode.key)
 
     # 검색결과 리스트를 반환하는 함수
     def get_video_id_list(self):

@@ -1,5 +1,5 @@
 #### basic ###
 .idea/
 .python-version
-src/config/conf.py
+config/data_collector.yml
 user_identify
