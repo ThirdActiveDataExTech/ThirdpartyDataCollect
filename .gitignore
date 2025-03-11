@@ -3,3 +3,12 @@
 .python-version
 config/data_collector.yml
 user_identify
+common/config/
+common/config2.py
+
+# file
+*.pyc
+
+# directory
+.idea/
+venv

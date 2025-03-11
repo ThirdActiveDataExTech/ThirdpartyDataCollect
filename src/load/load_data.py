@@ -2,7 +2,9 @@ import os
 
 import urllib3
 from minio import Minio, S3Error
-from config.config import Config
+from common.config.config import Config
+
+config = Config()
 
 
 class LoadData:
