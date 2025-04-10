@@ -12,3 +12,6 @@ common/config2.py
 # directory
 .idea/
 venv
+
+# temp files
+src/extract/youtube/tmp/mp3test
