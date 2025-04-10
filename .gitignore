@@ -14,4 +14,4 @@ common/config2.py
 venv
 
 # temp files
-src/extract/youtube/tmp/mp3test
+src/extract/youtube/tmp
