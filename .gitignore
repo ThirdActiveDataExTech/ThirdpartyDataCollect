@@ -5,6 +5,7 @@ config/data_collector.yml
 user_identify
 common/config/
 common/config2.py
+src/common/config/user_config.py
 
 # file
 *.pyc
