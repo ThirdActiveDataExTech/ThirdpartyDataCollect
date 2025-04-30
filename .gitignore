@@ -15,5 +15,4 @@ src/common/config/user_config.py
 venv
 
 # temp files
-src/extract/youtube/tmp
 src/extract/tmp_files
