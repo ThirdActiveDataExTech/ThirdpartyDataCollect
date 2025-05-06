@@ -8,11 +8,11 @@ YOUTUBE = googleapiclient.discovery.build("youtube", "v3", developerKey=Config.y
 
 # 검색결과 리스트를 반환하는 함수
 # max_result : 반환 결과값 개수 지정
-def get_video_id_list(search_term, max_result):
+def get_video_id_list(search_term, count):
     id_list = []
     request = YOUTUBE.search().list(
         part="id",
-        maxResults=max_result,
+        maxResults=count,
         order="viewCount",
         q=search_term,
         regionCode="KR",

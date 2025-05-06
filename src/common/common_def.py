@@ -1,6 +1,8 @@
 import json
 import os
 import urllib.request
+import uuid
+
 import requests
 import re
 
@@ -9,6 +11,18 @@ from common import log
 from bs4 import BeautifulSoup
 from common import error
 from common.config.user_config import Config
+
+
+def make_file_path(url):
+    file_name = str(uuid.uuid4()) + ".txt"
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    file_dir = os.path.join(root_dir, 'tmp_files/')
+    file_path = file_dir + file_name
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
+
+    return file_path, file_name
+
 
 
 def search_api(url):

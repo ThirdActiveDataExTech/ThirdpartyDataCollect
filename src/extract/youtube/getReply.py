@@ -6,13 +6,13 @@ YOUTUBE = googleapiclient.discovery.build("youtube", "v3", developerKey=Config.y
 
 
 # 영상 댓글을 리스트로 반환하는 함수
-def get_reply(video_id_list, enum, table, number):
+def get_reply(video_id_list, enum, table, count):
     is_filelist = False
     reply_list = []
     for video_id in video_id_list:
         request = YOUTUBE.commentThreads().list(
             part="snippet,replies",
-            maxResults=number,
+            maxResults=count,
             videoId=video_id
         )
         response = request.execute()

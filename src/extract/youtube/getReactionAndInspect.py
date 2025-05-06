@@ -4,10 +4,8 @@ import googleapiclient.errors
 from src.common.config.user_config import Config
 
 
-api_service_name = "youtube"
-api_version = "v3"
 youtube = googleapiclient.discovery.build(
-    api_service_name, api_version, developerKey=Config.youtube_api.key)
+    "youtube", "v3", developerKey=Config.youtube_api.key)
 
 
 def get_video_inspect(video_id_list, enum):
@@ -51,4 +49,4 @@ def get_video_inspect(video_id_list, enum):
 
 if __name__ == '__main__':
     video_ids = ['nZODAXlTv4E', 'jANE8lpoj2c', 'TzcfrbYGPY8']
-    print(get_video_inspect(video_ids, api_service_name))
+    print(get_video_inspect(video_ids, "youtube"))
