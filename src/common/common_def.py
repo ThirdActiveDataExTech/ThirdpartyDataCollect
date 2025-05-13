@@ -13,16 +13,14 @@ from common import error
 from common.config.user_config import Config
 
 
-def make_file_path(url):
-    file_name = str(uuid.uuid4()) + ".txt"
+def make_file_path(origin, file_id):
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    file_dir = os.path.join(root_dir, 'tmp_files/')
-    file_path = file_dir + file_name
+    file_dir = os.path.join(root_dir, 'extract/tmp_files/', origin)
+    file_path = file_dir + "/" + file_id
     if not os.path.exists(file_dir):
         os.makedirs(file_dir)
 
-    return file_path, file_name
-
+    return file_path
 
 
 def search_api(url):
@@ -42,8 +40,8 @@ def search_api(url):
 
 
 # url의 내용을 크롤링하는 함수
-def get_crawling_file(enum, url, file_name):
-    if enum == 'blog':
+def get_crawling_file(origin, url, file_name):
+    if origin == 'blog':
         # URL 유효성 체크
         url = url[0:8] + 'm.' + url[8:]
     try:
@@ -55,7 +53,7 @@ def get_crawling_file(enum, url, file_name):
     except requests.exceptions.HTTPError:
         raise
 
-    file_path = load_to_file(enum, page, file_name)
+    file_path = load_to_file(origin, page, file_name)
 
     return file_path
 
@@ -74,9 +72,9 @@ def status_check(url):
 
 
 # 크롤링 결과를 file로 저장하는 함수
-def load_to_file(enum, page, file_name):
+def load_to_file(origin, page, file_name):
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    file_dir = f"{root_dir}/extract/tmp_files/{enum}/"
+    file_dir = f"{root_dir}/extract/tmp_files/{origin}/"
     file_path = file_dir + file_name
     if not os.path.exists(file_dir):
         os.makedirs(file_dir)
@@ -100,7 +98,7 @@ def get_data_id(enum, url):
         # blog url은 https://blog.naver.com/ms_hs-93/223780771002" 형식
         match = re.search(r"blog.naver.com/([a-zA-Z0-9_-]+)/([0-9]+)", url)
         if match:
-            return match.group(1) + match.group(2)
+            return match.group(1), match.group(1) + "/" + match.group(2)
         else:
             log.info("data_id 추출 실패 - 올바르지 않은 blog url 형식")
         return ""
