@@ -1,5 +1,6 @@
 import json
 from urllib.parse import urlencode
+from datetime import datetime
 
 from load.load_data import minio_load
 from src.common.config.user_config import Config
@@ -7,7 +8,7 @@ from src.common.common_def import make_file_path
 
 import requests
 
-origin = "seoulportal"
+origin = "portal"
 
 
 def get_data_seoul(endpoint, data_seoul_params=None):
@@ -15,7 +16,7 @@ def get_data_seoul(endpoint, data_seoul_params=None):
     서울열린데이터포털 API에서 데이터를 가져옵니다.
 
     :param endpoint: 수집할 url endpoint
-    :param data_portal_params: 추가적인 파라미터 (딕셔너리 형태)
+    :param data_seoul_params: 추가적인 파라미터 (딕셔너리 형태)
     :return: JSON 응답 데이터
     """
 
@@ -26,12 +27,14 @@ def get_data_seoul(endpoint, data_seoul_params=None):
     try:
         response = requests.get(url, params=params)
         if endpoint[0] == "/":
-            file_id = endpoint.replace("/", "_")[1:]
+            data_id = endpoint.replace("/", "_")[1:]
         else:
-            file_id = endpoint.replace("/", "_")
-        file_path = make_file_path(origin, file_id)
-        data["file_id"] = file_id
-        data["bucket"] = "seoulportal"
+            data_id = endpoint.replace("/", "_")
+        file_path = make_file_path("seoulportal", data_id)
+        data["url"] = f"{url}?{params}"
+        data["data_id"] = data_id
+        data["origin"] = origin
+        data["date"] = datetime.now().date()
 
         if response.status_code == 200:
             try:
@@ -40,7 +43,7 @@ def get_data_seoul(endpoint, data_seoul_params=None):
                     json.dump(response.json(), f, ensure_ascii=False, indent=4)
             except EOFError as e:
                 print(f"파일 저장 실패: {e}")
-            data["file_path"] = minio_load(origin, file_path)
+            data["file_path"] = minio_load("seoulportal", file_path)
             return data
         else:
             raise Exception(f"해당 url을 불러오는 데에 실패하였습니다.")

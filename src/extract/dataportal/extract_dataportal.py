@@ -27,13 +27,13 @@ def get_data_portal(endpoint, data_portal_params=None):
     try:
         response = requests.get(url, params=params)
         if endpoint[0] == "/":
-            file_id = endpoint.replace("/", "_")[1:]
+            data_id = endpoint.replace("/", "_")[1:]
         else:
-            file_id = endpoint.replace("/", "_")
-        file_path = make_file_path("dataportal", file_id)
-        data["file_id"] = file_id
-        data["origin"] = origin
+            data_id = endpoint.replace("/", "_")
+        file_path = make_file_path("dataportal", data_id)
         data["url"] = f"{url}?{params}"
+        data["data_id"] = data_id
+        data["origin"] = origin
 
         if response.status_code == 200:
             try:
@@ -54,10 +54,8 @@ def get_data_portal(endpoint, data_portal_params=None):
 
 
 if __name__ == "__main__":
-    data_portal_base_url = Config.data_portal.base_url  # 데이터 포털의 기본 URL
     # http://apis.data.go.kr 을 제외한 나머지
     data_portal_endpoint = "/1320000/PlanCrossRoadInfoService/getPlanCRHDInfo"  # API 엔드포인트
-    data_portal_service_key = Config.data_portal.service_key
 
     potral_params = {'serviceKey': Config.data_portal.service_key, 'pageNo': '1', 'numOfRows': '10', 'type': 'json', 'srchCTId': 'L01', 'srchCRNm': '시청'}
 
