@@ -6,7 +6,7 @@ from src.common.common_def import make_file_path
 import requests
 import json
 
-origin = 'dataportal'
+origin = 'portal'
 
 
 def get_data_portal(endpoint, data_portal_params=None):
@@ -30,9 +30,10 @@ def get_data_portal(endpoint, data_portal_params=None):
             file_id = endpoint.replace("/", "_")[1:]
         else:
             file_id = endpoint.replace("/", "_")
-        file_path = make_file_path(origin, file_id)
+        file_path = make_file_path("dataportal", file_id)
         data["file_id"] = file_id
-        data["bucket"] = "dataportal"
+        data["origin"] = origin
+        data["url"] = f"{url}?{params}"
 
         if response.status_code == 200:
             try:
@@ -41,7 +42,7 @@ def get_data_portal(endpoint, data_portal_params=None):
             except EOFError as e:
                 print(f"파일 저장 실패: {e}")
 
-            data["file_path"] = minio_load(origin, file_path)
+            data["file_path"] = minio_load("dataportal", file_path)
             return data
         else:
             raise Exception(f"해당 url을 불러오는 데에 실패하였습니다.")
