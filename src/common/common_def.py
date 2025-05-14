@@ -93,17 +93,17 @@ def load_to_file(origin, page, file_name):
 
 
 # blog data_id 추출 함수
-def get_data_id(enum, url):
-    if enum == "blog":
+def get_data_id(origin, url):
+    if origin == "blog":
         # blog url은 https://blog.naver.com/ms_hs-93/223780771002" 형식
         match = re.search(r"blog.naver.com/([a-zA-Z0-9_-]+)/([0-9]+)", url)
         if match:
-            return match.group(1), match.group(1) + "/" + match.group(2)
+            return f"{match.group(1)}_{match.group(2)}"
         else:
             log.info("data_id 추출 실패 - 올바르지 않은 blog url 형식")
         return ""
 
-    elif enum == "news":
+    elif origin == "news":
         parsed = urlparse(url)
         # 사이트 이름 추출
         site = parsed.netloc.split('.')[1]
@@ -116,7 +116,7 @@ def get_data_id(enum, url):
 
         return f"{site}{id_match.group(1)}" if id_match else 'N/A'
 
-    elif enum == "youtube":
+    elif origin == "youtube":
         # Youtube url은 "https://www.youtube.com/watch?v=A3DtaMoTBbA&t=2304s" 형식
         match = re.search(r"v=([a-zA-Z0-9_-]+)", url)
         if match:
