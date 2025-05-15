@@ -2,6 +2,7 @@ from urllib.parse import urlencode
 from common.config.user_config import Config
 from load.load_data import minio_load
 from src.common.common_def import make_file_path
+from datetime import datetime
 
 import requests
 import json
@@ -34,6 +35,7 @@ def get_data_portal(endpoint, data_portal_params=None):
         data["url"] = f"{url}?{params}"
         data["data_id"] = data_id
         data["origin"] = origin
+        data["date"] = datetime.now().date()
 
         if response.status_code == 200:
             try:
