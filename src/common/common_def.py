@@ -44,10 +44,12 @@ def get_crawling_file(origin, url, file_name):
     if origin == 'blog':
         # URL 유효성 체크
         url = url[0:8] + 'm.' + url[8:]
+
     try:
         status_check(url)
     except requests.exceptions.HTTPError:
         raise
+
     try:
         page = read_web(url)
     except requests.exceptions.HTTPError:
@@ -109,12 +111,14 @@ def get_data_id(origin, url):
         site = parsed.netloc.split('.')[1]
 
         # 기사 ID 추출 (no= 또는 idxno= 또는 entry_id= 등 다양한 경우 커버)
-        id_match = re.search(r'(?:no=|idxno=|entry_id=)(\d+)', parsed.query)
+        id_match = re.search(r'([A-Za-z0-9._%+-]+)=(\d+)', parsed.query).group(2)
         if not id_match:
             # 쿼리 스트링에 없는 경우 path에서 숫자 추출 시도
-            id_match = re.search(r'/article/(\d+)', parsed.path)
+            id_match = parsed.path.split("/")[-1]
+            if site in id_match:
+                return id_match
 
-        return f"{site}{id_match.group(1)}" if id_match else 'N/A'
+        return f"{site}{id_match}"
 
     elif origin == "youtube":
         # Youtube url은 "https://www.youtube.com/watch?v=A3DtaMoTBbA&t=2304s" 형식
