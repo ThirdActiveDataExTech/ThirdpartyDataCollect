@@ -27,7 +27,7 @@ def get_news_list(search_response):
         url = item.get("originallink")
         description = item.get("description")
         post_date = item.get("pubDate")
-        file_path = minio_load(origin, common_def.get_crawling_file(origin, url, data_id))
+        file_path = minio_load(origin, common_def.get_crawling_file(origin, url, f"{str(data_id)}.txt"))
 
         data = news_data(title=title, url=url, description=description, post_date=post_date, file_path=file_path, data_id=data_id)
         news_list.append(data)

@@ -21,14 +21,14 @@ def search_blog_api(search_term, count):
 # 입력: 검색결과 url list/ 출력: load 할 data
 def get_blog_list(search_response):
     blog_list = []
-    blog_data = namedtuple('blog', ['post_url', 'title', 'blog_url', 'post_date', 'file_path', 'data_id'])
+    blog_data = namedtuple(origin, ['post_url', 'title', 'blog_url', 'post_date', 'file_path', 'data_id'])
     for item in search_response:
         post_url = item.get("link")
         data_id = common_def.get_data_id(origin, post_url)
         title = str(item.get("title"))
         blog_url = item.get("bloggerlink")
         post_date = item.get("postdate")
-        file_path = minio_load(origin, common_def.get_crawling_file(origin, post_url, str(data_id)))
+        file_path = minio_load(origin, common_def.get_crawling_file(origin, post_url, f"{str(data_id)}.txt"))
 
         data = blog_data(post_url=post_url, title=title, blog_url=blog_url, post_date=post_date, file_path=file_path, data_id=data_id)
         blog_list.append(data)

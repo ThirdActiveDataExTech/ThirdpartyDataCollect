@@ -39,17 +39,13 @@ postgres_cur = postgres_conn.cursor()
 
 
 def minio_load(origin, path):
-    file_name = os.path.basename(path)
-    extension = ""
+    file_name = os.path.basename(path).split("=")[0]
     try:
-        if origin == "portal":
-            minio.fput_object(origin, file_name, path)
-        else:
-            extension = ".txt"
-            minio.fput_object(origin, file_name + ".txt", path)
+        minio.fput_object(origin, str(file_name), path)
     except S3Error as e:
         print(f"{file_name} txt 파일 업로드 중 에러가 발생했습니다: {e}")
-    return f"{Config.minio_server.url}/browser/{origin}/{file_name}{extension}"
+    print(f"{file_name} - minio 저장 완료")
+    return f"{Config.minio_server.url}/browser/{origin}/{file_name}"
 
 
 def load_common(origin, data):
@@ -113,11 +109,11 @@ def load_list(data_list):
         return
 
     # 필드 이름 추출
-    fields = data_list.keys()
+    fields = data_list[0]._fields
 
     placeholders = ', '.join([f'%s'] * len(fields))
     columns = ', '.join(fields)
-    table_name = f"{data_list[0].__class__.__name__}_fields"
+    table_name = f"{data_list[0].__class__.__name__}"
 
     # SQL 생성
     sql = (
@@ -172,14 +168,16 @@ if __name__ == '__main__':
     # load_single(data_list)
 
     # youtube test
-    # from extract.youtube.getVideoIdList import get_video_id_list
+    from extract.youtube.getVideoIdList import get_video_id_list
     # from extract.youtube.getVideoReply import get_reply
+    from extract.youtube.getVideoMp3 import get_video_mp3
     # load_list(get_reply(get_video_id_list("SBS 드라마", 5), "youtube", 4, 5))
+    load_list(get_video_mp3(get_video_id_list("SBS 드라마", 5)))
 
     # blog test
     # from src.extract.blog.naver import extract_blog
     # load_multiple_list(extract_blog.get_blog_list(extract_blog.search_blog_api("책", 10)))
 
     # news test
-    from extract.news import extract_news
-    load_multiple_list(extract_news.get_news_list(extract_news.search_news_api("위암", 3)))
+    # from extract.news import extract_news
+    # load_multiple_list(extract_news.get_news_list(extract_news.search_news_api("위암", 3)))

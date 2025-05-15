@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 import googleapiclient.discovery
 import googleapiclient.errors
 
@@ -9,13 +11,9 @@ youtube = googleapiclient.discovery.build(
 
 
 def get_video_inspect(video_id_list, enum):
-    is_filelist = False
     inspect_list = []
-    title_list = []
-    thumbnail_list = []
-    viewcount_list = []
-    likecount_list = []
-    tag_list = []
+    inspect_data = namedtuple('youtube', ['title', 'thumbnail', 'viewcount', 'likecount', 'tag', 'data_id'])
+
     for video_id in video_id_list:
         request = youtube.videos().list(
             part="snippet, statistics",
@@ -32,19 +30,11 @@ def get_video_inspect(video_id_list, enum):
         likecount = statistics["likeCount"]
         tag = snippet.get('tags', [])
 
-        title_list.append({"id": video_id, "title": title})
-        thumbnail_list.append({"id": video_id, "thumbnail": thumbnail})
-        viewcount_list.append({"id": video_id, "viewcount": viewcount})
-        likecount_list.append({"id": video_id, "likecount": likecount})
-        tag_list.append({"id": video_id, "tag": tag})
+        data = inspect_data(title=title, thumbnail=thumbnail, viewcount=viewcount, likecount=likecount, tag=tag,
+                            data_id=video_id)
+        inspect_list.append(data)
 
-    inspect_list.append(title_list)
-    inspect_list.append(thumbnail_list)
-    inspect_list.append(viewcount_list)
-    inspect_list.append(likecount_list)
-    inspect_list.append(tag_list)
-
-    return is_filelist, enum, ["title", "thumbnail", "viewcount", "likecount", "tag"], inspect_list
+    return inspect_list
 
 
 if __name__ == '__main__':
