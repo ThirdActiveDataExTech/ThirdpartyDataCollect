@@ -1,0 +1,13 @@
+minio_server:
+access_key: admin
+
+postgres_server:
+
+data_portal:
+
+seoul_portal:
+
+naver_api:
+
+youtube_api:
+openai_api:

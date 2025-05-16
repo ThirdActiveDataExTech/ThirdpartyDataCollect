@@ -1,0 +1,18 @@
+#### basic ###
+.idea/
+.python-version
+config/data_collector.yml
+user_identify
+common/config/
+common/config2.py
+src/common/config/user_config.py
+
+# file
+*.pyc
+
+# directory
+.idea/
+venv
+
+# temp files
+src/extract/tmp_files
