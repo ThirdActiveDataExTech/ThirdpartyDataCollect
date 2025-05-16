@@ -60,29 +60,6 @@ def load_common(origin, data):
         log.error("지원하지 않는 수집 type입니다.")
 
 
-def load_file(origin, data_list):
-    if not minio.bucket_exists(origin):
-        minio.make_bucket(origin)
-
-    if isinstance(data_list, list):
-        minio_file_path = []
-        # file_size = []
-        path_tuple = namedtuple('path', ['file_path', 'data_id'])
-        for path in data_list:
-            file_name = minio_load(origin, path)
-
-            minio_path = "http://" + minio_url + "/" + origin + "/" + file_name + ".txt"
-            # size = os.path.getsize(path)
-
-            minio_file_path.append(path_tuple(file_path=minio_path, data_id=file_name))
-            # file_size.append(size)
-        load_list(minio_file_path)
-    else:
-        file_name = minio_load(origin, data_list)
-        minio_path = "http://" + minio_url + "/" + origin + "/" + file_name + ".txt"
-        load_single(file_name, minio_path)
-
-
 # dict 형태로 data 전달
 def load_single(data_dict):
     if not data_dict:
