@@ -1,0 +1,37 @@
+# 빌드 이미지와 실행 이미지를 다른 이미지로 대체하길 원하는 경우를 위한 이미지 변수
+ARG BUILD_IMAGE=python:3.11.7
+ARG RUNTIME_IMAGE=python:3.11.7
+
+###############################################################
+###                      Stage : Build                      ###
+###############################################################
+FROM ${BUILD_IMAGE} as build
+
+### 필요 파일 복사
+COPY src/extract/news/web-crawler-main /app
+WORKDIR /app
+
+### python library 설치
+RUN pip install -r requirements.txt
+
+ENV PYTHONPATH /app/src
+
+## 기본 라벨링
+LABEL company="Mobigen" \
+	team="mobigen-platform-team" \
+	email="irisdev@mobigen.com"
+
+## Install Locale(ko_KR.UTF-8)
+RUN apt-get update && apt-get install -y locales \
+    && localedef -f UTF-8 -i ko_KR ko_KR.UTF-8 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ENV APP_HOME=/app \
+    APP_NAME=crawler
+
+#
+#COPY --from=build /app/src /app/src
+##COPY --from=build /app/lib /app/lib
+##COPY sbin /app/sbin
+
+ENTRYPOINT ["python3", "/app/src/crawler_server.py"]
