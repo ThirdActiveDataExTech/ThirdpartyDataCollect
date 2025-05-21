@@ -2,16 +2,19 @@ import os
 import tempfile
 from collections import namedtuple
 
+import imageio_ffmpeg
 import yt_dlp
 
 from load.load_data import minio_load
 
+origin = "youtube_mp3_path"
+mp3_data = namedtuple(origin, ['data_id', 'mp3_path'])
+
 
 # 비디오 mp3를 추출해서 리턴하는 함수
 def get_video_mp3(video_id_list, minio_url, minio_access_key, minio_secret_key):
-    origin = f"youtube_mp3_path"
-    mp3_data = namedtuple(origin, ['data_id', 'mp3_path'])
     file_path_list = []
+    ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
 
     # 컨텍스트 매니저 방식
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -23,6 +26,7 @@ def get_video_mp3(video_id_list, minio_url, minio_access_key, minio_secret_key):
             ydl_opts = {  # youtube_dl 라이브러리 설정
                 'outtmpl': output_dir,
                 'format': 'bestaudio/best',  # 최고 품질로 추출
+                'ffmpeg_location': ffmpeg_path,
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',  # 영상을 오디오 파일로 추출
                     'preferredcodec': 'mp3',  # 오디오 파일 포맷을 mp3 파일로 설정
@@ -38,7 +42,7 @@ def get_video_mp3(video_id_list, minio_url, minio_access_key, minio_secret_key):
                 return None
 
             url = minio_load(minio_url, minio_access_key, minio_secret_key, "youtube", f"{output_dir}.mp3")
-            file_path_list.append(mp3_data(data_id=video_id, mp3_path=url))
+            file_path_list.append(mp3_data(data_id=video_id, mp3_path=url)._asdict())
 
     return file_path_list
 

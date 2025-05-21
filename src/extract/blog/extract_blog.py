@@ -34,7 +34,7 @@ def get_blog_list(search_response, minio_url: str, minio_access_key: str, minio_
 
         data = blog_data(post_url=post_url, title=title, blog_url=blog_url, post_date=post_date, file_path=file_path,
                          data_id=data_id)
-        blog_list.append(data)
+        blog_list.append(data._asdict())
 
     return blog_list
 

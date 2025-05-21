@@ -32,7 +32,7 @@ def get_news_list(search_response, minio_url, minio_access_key, minio_secret_key
 
         data = news_data(title=title, url=url, description=description, post_date=post_date, file_path=file_path,
                          data_id=data_id)
-        news_list.append(data)
+        news_list.append(data._asdict())
     return news_list
 
 
