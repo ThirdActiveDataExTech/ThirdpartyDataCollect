@@ -1,14 +1,10 @@
 from openai import OpenAI
 
-from getVideoScript import get_video_script
-
 
 # ai가 요약한 영상 내용을 리턴하는 함수
-def get_video_summary(video_id_list, enum, openai_api_key):
-    is_filelist = False
+def get_video_summary(scripts, openai_api_key):
     summary_list = []
-    for video_id in video_id_list:
-        script, enum = get_video_script([video_id], enum)
+    for script in scripts:
         client = OpenAI(
             api_key=openai_api_key
         )
@@ -17,13 +13,13 @@ def get_video_summary(video_id_list, enum, openai_api_key):
             model="gpt-4o-mini",
             store=True,
             messages=[
-                {"role": "user", "content": f"{script}"}
+                {"role": "user", "content": f"{script.get('script')}"}
             ]
         )
 
-        summary_list.append({"id": video_id, "summary": completion.choices[0].message})
+        summary_list.append({"id": script.get('id'), "summary": completion.choices[0].message.content})
 
-    return is_filelist, enum, summary_list
+    return summary_list
 
 
 if __name__ == "__main__":
