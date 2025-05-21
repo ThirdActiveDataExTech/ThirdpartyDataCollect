@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from config.config import Config
+from common.config.user_config import Config
 
 
 import psycopg2

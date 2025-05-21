@@ -15,5 +15,7 @@ def extract_keyword(file_path_list):
                 json.dump(content, f, ensure_ascii=False, indent=4)
         except EOFError as e:
             print(f"파일 저장 실패: {e}")
+            continue
         keyword_file_list.append(keyword_file_path)
+    return keyword_file_list
 

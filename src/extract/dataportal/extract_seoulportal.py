@@ -1,17 +1,17 @@
 import json
-from urllib.parse import urlencode
 from datetime import datetime
-
-from load.load_data import minio_load
-from src.common.config.user_config import Config
-from src.common.common_def import make_file_path
+from urllib.parse import urlencode
 
 import requests
+
+from common.common_def import make_file_path
+from load.load_data import minio_load
 
 origin = "portal"
 
 
-def get_data_seoul(endpoint, data_seoul_params=None):
+def get_data_seoul(seoul_portal_base_url, seoul_portal_service_key, minio_url, minio_access_key, minio_secret_key,
+                   endpoint, data_seoul_params=None):
     """
     서울열린데이터포털 API에서 데이터를 가져옵니다.
 
@@ -21,7 +21,7 @@ def get_data_seoul(endpoint, data_seoul_params=None):
     """
 
     params = urlencode(data_seoul_params)
-    url = f"http://{Config.seoul_portal.base_url}{Config.seoul_portal.service_key}{endpoint}"
+    url = f"http://{seoul_portal_base_url}{seoul_portal_service_key}{endpoint}"
     data = {}
 
     try:
@@ -43,7 +43,7 @@ def get_data_seoul(endpoint, data_seoul_params=None):
                     json.dump(response.json(), f, ensure_ascii=False, indent=4)
             except EOFError as e:
                 print(f"파일 저장 실패: {e}")
-            data["file_path"] = minio_load("seoulportal", file_path)
+            data["file_path"] = minio_load(minio_url, minio_access_key, minio_secret_key, "seoulportal", file_path)
             return data
         else:
             raise Exception(f"해당 url을 불러오는 데에 실패하였습니다.")
@@ -57,7 +57,8 @@ def get_data_seoul(endpoint, data_seoul_params=None):
 if __name__ == "__main__":
     data_seoul_endpoint = "/json/SeoulAdminMesure/1/5/"
 
-    portal_params = {'KEY': Config.data_portal.service_key, 'TYPE': 'json', 'SERVICE': 'SeoulAdminMesure', 'START_INDEX': '0', 'END_INDEX': '10'}
+    # portal_params = {'KEY': Config.data_portal.service_key, 'TYPE': 'json', 'SERVICE': 'SeoulAdminMesure', 'START_INDEX': '0', 'END_INDEX': '10'}
+    portal_params = {}
 
     data_seoul = get_data_seoul(data_seoul_endpoint, portal_params)
 

@@ -1,19 +1,16 @@
+import pickle
 from collections import namedtuple
 
 import googleapiclient.discovery
 import googleapiclient.errors
 
-from src.common.config.user_config import Config
 
-
-youtube = googleapiclient.discovery.build(
-    "youtube", "v3", developerKey=Config.youtube_api.key)
-
-
-def get_video_inspect(video_id_list, enum):
+def get_video_inspect(video_id_list, enum, youtube_api_key):
     inspect_list = []
     inspect_data = namedtuple('youtube', ['title', 'thumbnail', 'viewcount', 'likecount', 'tag', 'data_id'])
 
+    youtube = googleapiclient.discovery.build(
+        "youtube", "v3", developerKey=youtube_api_key)
     for video_id in video_id_list:
         request = youtube.videos().list(
             part="snippet, statistics",

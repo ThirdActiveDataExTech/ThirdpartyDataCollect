@@ -1,17 +1,16 @@
 from openai import OpenAI
 
 from getVideoScript import get_video_script
-from src.common.config.user_config import Config
 
 
 # ai가 요약한 영상 내용을 리턴하는 함수
-def get_video_summary(video_id_list, enum):
+def get_video_summary(video_id_list, enum, openai_api_key):
     is_filelist = False
     summary_list = []
     for video_id in video_id_list:
         script, enum = get_video_script([video_id], enum)
         client = OpenAI(
-            api_key=Config.openai_api.key
+            api_key=openai_api_key
         )
 
         completion = client.chat.completions.create(

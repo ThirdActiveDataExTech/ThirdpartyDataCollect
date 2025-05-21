@@ -1,7 +1,6 @@
 import os
 import sys
 import logging.handlers
-from common.config import user_config as config
 
 log_format = "[%(asctime)s] %(levelname)s, %(filename)s %(funcName)s %(lineno)d, %(message)s"
 formatter = logging.Formatter(log_format, '%Y/%m/%d %H:%M:%S')
@@ -14,8 +13,8 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 
 if 'APP_NAME' in os.environ:
-    log_dir = config.LOG_DIR
-    log_name = f"{config.APP_NAME}.log"
+    log_dir = "./logs"
+    log_name = f"thirdparty_data_collect.log"
     log_path = os.path.join(log_dir, log_name)
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
