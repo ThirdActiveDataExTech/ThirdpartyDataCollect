@@ -12,18 +12,22 @@ def get_reply(videos: Tuple[str, List[Dict[str, Any]]],
     reply_list = []
     for video in videos[1]:
         video_id = video["id"]
-        request = youtube.commentThreads().list(
-            part="snippet,replies",
-            maxResults=count,
-            videoId=video_id
-        )
-        response = request.execute()
+        try:
+            request = youtube.commentThreads().list(
+                part="snippet,replies",
+                maxResults=count,
+                videoId=video_id
+            )
+            response = request.execute()
 
-        reply = [item["snippet"]["topLevelComment"]["snippet"]["textDisplay"] for item in response["items"]]
-        reply_list.append({
-            "id": video_id,
-            "reply": reply,
-        })
+            reply = [item["snippet"]["topLevelComment"]["snippet"]["textDisplay"] for item in response["items"]]
+            reply_list.append({
+                "id": video_id,
+                "reply": reply,
+            })
+        except googleapiclient.errors.HttpError as error:
+            print(error)
+            reply_list.append({"id": video_id, "reply": []})
     return "youtube", reply_list
 
 
