@@ -6,62 +6,58 @@ from psycopg2 import sql
 import urllib3
 from minio import Minio
 
-from src.common.config.user_config import Config
 from common import log
 from minio import S3Error
 
-config = Config()
-minio_url = Config.minio_server.url
-minio = Minio(
-    minio_url,
-    access_key=Config.minio_server.access_key,
-    secret_key=Config.minio_server.secret_key,
-    secure=False,
-    http_client=urllib3.PoolManager(
-        timeout=urllib3.Timeout.DEFAULT_TIMEOUT,
-        retries=urllib3.Retry(
-            total=1,
-            backoff_factor=0.2,
-            status_forcelist=()
+
+def get_postgres_connect(host, port, user, password, database):
+    return psycopg2.connect(
+        host=host,
+        port=port,
+        database=database,
+        user=user,
+        password=password,
+    )
+
+
+def minio_load(minio_url, minio_access_key, minio_secret_key, origin, path):
+    minio = Minio(
+        minio_url,
+        access_key=minio_access_key,
+        secret_key=minio_secret_key,
+        secure=False,
+        http_client=urllib3.PoolManager(
+            timeout=urllib3.Timeout.DEFAULT_TIMEOUT,
+            retries=urllib3.Retry(
+                total=1,
+                backoff_factor=0.2,
+                status_forcelist=()
+            )
         )
     )
-)
-
-postgres_conn = psycopg2.connect(
-    host=Config.postgres_server.host,
-    database=Config.postgres_server.database,
-    user=Config.postgres_server.user,
-    password=Config.postgres_server.password,
-    port=Config.postgres_server.port
-)
-
-postgres_cur = postgres_conn.cursor()
-
-
-def minio_load(origin, path):
     file_name = os.path.basename(path).split("=")[0]
     try:
         minio.fput_object(origin, str(file_name), path)
     except S3Error as e:
         print(f"{file_name} txt 파일 업로드 중 에러가 발생했습니다: {e}")
     print(f"{file_name} - minio 저장 완료")
-    return f"{Config.minio_server.url}/browser/{origin}/{file_name}"
+    return f"{minio_url}/browser/{origin}/{file_name}"
 
 
-def load_common(origin, data):
+def load_common(postgres_host, postgres_port, postgres_user, postgres_password, postgres_database, origin, data):
     if origin in ('blog', 'news'):
-        load_multiple_list(data)
+        load_multiple_list(postgres_host, postgres_port, postgres_user, postgres_password, postgres_database, data)
     elif origin == 'portal':
         print('load_single')
         # load_single(data)
     elif origin == 'youtube':
-        load_list(data)
+        load_list(postgres_host, postgres_port, postgres_user, postgres_password, postgres_database, data)
     else:
         log.error("지원하지 않는 수집 type입니다.")
 
 
 # dict 형태로 data 전달
-def load_single(data_dict):
+def load_single(postgres_host, postgres_port, postgres_user, postgres_password, postgres_database, data_dict):
     if not data_dict:
         return
 
@@ -70,6 +66,9 @@ def load_single(data_dict):
 
     data = {k: v for k, v in data_dict.items() if k not in ("data_id", "origin")}
 
+    postgres_conn = get_postgres_connect(postgres_host, postgres_port, postgres_user, postgres_password,
+                                        postgres_database)
+    postgres_cur = postgres_conn.cursor()
     for key, value in data.items():
         query = sql.SQL("INSERT INTO {} (data_id, {}) VALUES (%s, %s)").format(
             sql.Identifier(f"{origin}_{key}"),
@@ -81,7 +80,7 @@ def load_single(data_dict):
 
 
 # namedtuple list 형태로 data 전달(1개 항목)
-def load_list(data_list):
+def load_list(postgres_host, postgres_port, postgres_user, postgres_password, postgres_database, data_list):
     if not data_list:
         return
 
@@ -102,12 +101,15 @@ def load_list(data_list):
     values = [tuple(row) for row in data_list]
 
     # 실행
+    postgres_conn = get_postgres_connect(postgres_host, postgres_port, postgres_user, postgres_password,
+                                        postgres_database)
+    postgres_cur = postgres_conn.cursor()
     postgres_cur.executemany(sql, values)
     postgres_conn.commit()
 
 
 # namedtuple list 형태로 data 전달(n개 항목)
-def load_multiple_list(data_list):
+def load_multiple_list(postgres_host, postgres_port, postgres_user, postgres_password, postgres_database, data_list):
     if not data_list:
         return
 
@@ -122,6 +124,9 @@ def load_multiple_list(data_list):
             data_id = getattr(item, 'data_id')
             field_data[field].append((data_id, value))  # 튜플 형태로 저장
 
+    postgres_conn = get_postgres_connect(postgres_host, postgres_port, postgres_user, postgres_password,
+                                        postgres_database)
+    postgres_cur = postgres_conn.cursor()
     for field, values in field_data.items():
         sql = f"INSERT INTO {origin}_{field} (data_id, {field}) VALUES (%s, %s)"
         postgres_cur.executemany(sql, values)
@@ -148,6 +153,7 @@ if __name__ == '__main__':
     from extract.youtube.getVideoIdList import get_video_id_list
     # from extract.youtube.getVideoReply import get_reply
     from extract.youtube.getVideoMp3 import get_video_mp3
+
     # load_list(get_reply(get_video_id_list("SBS 드라마", 5), "youtube", 4, 5))
     load_list(get_video_mp3(get_video_id_list("SBS 드라마", 5)))
 

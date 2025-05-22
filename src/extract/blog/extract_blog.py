@@ -10,16 +10,16 @@ origin = 'blog'
 
 # naver의 검색 api를 이용한 크롤링 함수
 # 입력: 검색어/ 출력: 검색결과 url list
-def search_blog_api(search_term, count):
+def search_blog_api(search_term, count, client_id: str, client_secret: str):
     enc_text = urllib.parse.quote(search_term)
     url = f"https://openapi.naver.com/v1/search/blog?query={enc_text}&display={count}"  # JSON 결과
     # url = "https://openapi.naver.com/v1/search/blog.xml?query=" + encText # XML 결과
-    return common_def.search_api(url)
+    return common_def.search_api(client_id, client_secret, url)
 
 
 # 검색 api의 결과에서 data('title', 'blog_url', 'post_date', 'file_path', 'data_id')를 추출하는 함수
 # 입력: 검색결과 url list/ 출력: load 할 data
-def get_blog_list(search_response):
+def get_blog_list(search_response, minio_url: str, minio_access_key: str, minio_secret_key: str):
     blog_list = []
     blog_data = namedtuple(origin, ['post_url', 'title', 'blog_url', 'post_date', 'file_path', 'data_id'])
     for item in search_response:
@@ -28,10 +28,13 @@ def get_blog_list(search_response):
         title = str(item.get("title"))
         blog_url = item.get("bloggerlink")
         post_date = item.get("postdate")
-        file_path = minio_load(origin, common_def.get_crawling_file(origin, post_url, f"{str(data_id)}.txt"))
+        file_path = minio_load(
+            minio_url, minio_access_key, minio_secret_key,
+            origin, common_def.get_crawling_file(origin, post_url, f"{str(data_id)}.txt"))
 
-        data = blog_data(post_url=post_url, title=title, blog_url=blog_url, post_date=post_date, file_path=file_path, data_id=data_id)
-        blog_list.append(data)
+        data = blog_data(post_url=post_url, title=title, blog_url=blog_url, post_date=post_date, file_path=file_path,
+                         data_id=data_id)
+        blog_list.append(data._asdict())
 
     return blog_list
 

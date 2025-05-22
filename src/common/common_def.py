@@ -1,16 +1,14 @@
 import json
 import os
+import re
 import urllib.request
-import uuid
+from urllib.parse import urlparse
 
 import requests
-import re
-
-from urllib.parse import urlparse
-from common import log
 from bs4 import BeautifulSoup
+
 from common import error
-from common.config.user_config import Config
+from common import log
 
 
 def make_file_path(origin, file_id):
@@ -23,9 +21,7 @@ def make_file_path(origin, file_id):
     return file_path
 
 
-def search_api(url):
-    client_id = Config.naver_api.client_id
-    client_secret = Config.naver_api.client_secret
+def search_api(client_id: str, client_secret: str, url: str):
     request = urllib.request.Request(url)
     request.add_header("X-Naver-Client-Id", client_id)
     request.add_header("X-Naver-Client-Secret", client_secret)
