@@ -1,11 +1,15 @@
+from typing import Tuple, List, Dict, Any
+
 from youtube_transcript_api import YouTubeTranscriptApi
 
 
 # 비디오 자막을 리턴하는 함수
-def get_video_script(video_id_list):
+def get_video_script(videos: Tuple[str, List[Dict[str, Any]]]
+                     ) -> Tuple[str, List[Dict[str, Any]]]:
     # fh = io.FileIO("YOUR_FILE", "wb")
     transcripts = []
-    for video_id in video_id_list:
+    for video in videos[1]:
+        video_id = video["id"]
         try:
             transcript_list = YouTubeTranscriptApi().list(video_id)
             transcript = transcript_list.find_transcript(['ko'])
@@ -27,9 +31,9 @@ def get_video_script(video_id_list):
             # while not complete:
             #     status, complete = download.next_chunk()
         except Exception as e:
-            print(e)
+            print(f"error 발생 {e}")
             transcripts.append({"id": video_id, "script": []})
-    return transcripts
+    return "youtube", transcripts
 
 
 if __name__ == '__main__':

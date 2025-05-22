@@ -1,13 +1,15 @@
+import json
 import os
-from collections import namedtuple, defaultdict
+from collections import defaultdict
+from typing import Any, Dict, List, Tuple
 
 import psycopg2
-from psycopg2 import sql
 import urllib3
 from minio import Minio
+from minio import S3Error
+from psycopg2 import sql
 
 from common import log
-from minio import S3Error
 
 
 def get_postgres_connect(host, port, user, password, database):
@@ -67,7 +69,7 @@ def load_single(postgres_host, postgres_port, postgres_user, postgres_password, 
     data = {k: v for k, v in data_dict.items() if k not in ("data_id", "origin")}
 
     postgres_conn = get_postgres_connect(postgres_host, postgres_port, postgres_user, postgres_password,
-                                        postgres_database)
+                                         postgres_database)
     postgres_cur = postgres_conn.cursor()
     for key, value in data.items():
         query = sql.SQL("INSERT INTO {} (data_id, {}) VALUES (%s, %s)").format(
@@ -102,7 +104,7 @@ def load_list(postgres_host, postgres_port, postgres_user, postgres_password, po
 
     # 실행
     postgres_conn = get_postgres_connect(postgres_host, postgres_port, postgres_user, postgres_password,
-                                        postgres_database)
+                                         postgres_database)
     postgres_cur = postgres_conn.cursor()
     postgres_cur.executemany(sql, values)
     postgres_conn.commit()
@@ -125,13 +127,55 @@ def load_multiple_list(postgres_host, postgres_port, postgres_user, postgres_pas
             field_data[field].append((data_id, value))  # 튜플 형태로 저장
 
     postgres_conn = get_postgres_connect(postgres_host, postgres_port, postgres_user, postgres_password,
-                                        postgres_database)
+                                         postgres_database)
     postgres_cur = postgres_conn.cursor()
     for field, values in field_data.items():
         sql = f"INSERT INTO {origin}_{field} (data_id, {field}) VALUES (%s, %s)"
         postgres_cur.executemany(sql, values)
 
     postgres_conn.commit()
+
+
+def load(*data: Tuple[str, List[Dict[str, Any]]],
+         postgres_host: str,
+         postgres_port: int,
+         postgres_user: str,
+         postgres_password: str,
+         postgres_database: str) -> Dict[str, int]:
+    if not data:
+        return {}
+    postgres_conn = get_postgres_connect(postgres_host, postgres_port, postgres_user, postgres_password,
+                                         postgres_database)
+    postgres_cur = postgres_conn.cursor()
+    result = {}
+    for d in data:
+        origin_, data_list = d
+        id_key = "id"
+        # 필드별로 insert 대상 그룹화
+        batched = defaultdict(list)
+        for row in data_list:
+            data_id = row[id_key]
+            for field, value in row.items():
+                if field == id_key:
+                    continue
+                if isinstance(value, list) or isinstance(value, dict):
+                    batched[field].append((data_id, json.dumps(value)))
+                else:
+                    batched[field].append((data_id, value))
+
+        for field, values in batched.items():
+            table_name = f"{origin_}_{field}"
+            sql = (f"INSERT INTO {table_name} (data_id, {field}) VALUES (%s, %s)"
+                   f"ON CONFLICT (data_id) DO NOTHING")
+            try:
+                postgres_cur.executemany(sql, values)
+            except psycopg2.Error as e:
+                print(e)
+                continue
+            result[table_name] = postgres_cur.rowcount
+
+    postgres_conn.commit()
+    return result
 
 
 if __name__ == '__main__':

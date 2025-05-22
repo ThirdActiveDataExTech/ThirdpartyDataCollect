@@ -1,18 +1,17 @@
-import pickle
-from collections import namedtuple
+from typing import List, Any, Dict, Tuple
 
 import googleapiclient.discovery
 import googleapiclient.errors
 
-inspect_data = namedtuple('youtube', ['title', 'thumbnail', 'viewcount', 'likecount', 'tag', 'data_id'])
 
-
-def get_video_inspect(video_id_list, enum, youtube_api_key):
+def get_video_inspect(videos: Tuple[str, List[Dict[str, Any]]],
+                      youtube_api_key: str) -> Tuple[str, List[Dict[str, Any]]]:
     inspect_list = []
 
     youtube = googleapiclient.discovery.build(
         "youtube", "v3", developerKey=youtube_api_key)
-    for video_id in video_id_list:
+    for video in videos[1]:
+        video_id = video["id"]
         request = youtube.videos().list(
             part="snippet, statistics",
             id=video_id
@@ -22,17 +21,16 @@ def get_video_inspect(video_id_list, enum, youtube_api_key):
         snippet = item["snippet"]
         statistics = item["statistics"]
 
-        title = snippet["title"]
-        thumbnail = snippet["thumbnails"]["default"]["url"]
-        viewcount = statistics["viewCount"]
-        likecount = statistics["likeCount"]
-        tag = snippet.get('tags', [])
+        inspect_list.append({
+            "id": video_id,
+            "title": snippet["title"],
+            "thumbnail": snippet["thumbnails"]["default"]["url"],
+            "viewcount": statistics["viewCount"],
+            "likecount": statistics["likeCount"],
+            "tag": snippet.get('tags', []),
+        })
 
-        data = inspect_data(title=title, thumbnail=thumbnail, viewcount=viewcount, likecount=likecount, tag=tag,
-                            data_id=video_id)
-        inspect_list.append(data._asdict())
-
-    return inspect_list
+    return "youtube", inspect_list
 
 
 if __name__ == '__main__':
