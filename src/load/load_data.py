@@ -148,8 +148,7 @@ def load(*data: Tuple[str, List[Dict[str, Any]]],
                                          postgres_database)
     postgres_cur = postgres_conn.cursor()
     result = {}
-    for d in data:
-        origin_, data_list = d
+    for origin_, data_list in data:
         id_key = "id"
         # 필드별로 insert 대상 그룹화
         batched = defaultdict(list)

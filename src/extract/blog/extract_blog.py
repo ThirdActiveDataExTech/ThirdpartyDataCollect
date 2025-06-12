@@ -1,6 +1,7 @@
 import urllib.parse
 import urllib.request
 from collections import namedtuple
+from typing import Tuple, List, Dict, Any
 
 from common import common_def
 from load.load_data import minio_load
@@ -10,11 +11,16 @@ origin = 'blog'
 
 # naver의 검색 api를 이용한 크롤링 함수
 # 입력: 검색어/ 출력: 검색결과 url list
-def search_blog_api(search_term, count, client_id: str, client_secret: str):
+def search_blog_api(search_term: str,
+                    count: int,
+                    client_id: str,
+                    client_secret: str
+                    ) -> Tuple[str, List[Dict[str, Any]]]:
     enc_text = urllib.parse.quote(search_term)
     url = f"https://openapi.naver.com/v1/search/blog?query={enc_text}&display={count}"  # JSON 결과
     # url = "https://openapi.naver.com/v1/search/blog.xml?query=" + encText # XML 결과
-    return common_def.search_api(client_id, client_secret, url)
+    data = common_def.search_api(client_id, client_secret, url)
+    return "blog", data
 
 
 # 검색 api의 결과에서 data('title', 'blog_url', 'post_date', 'file_path', 'data_id')를 추출하는 함수

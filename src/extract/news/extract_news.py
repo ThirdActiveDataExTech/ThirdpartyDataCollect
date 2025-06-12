@@ -1,6 +1,7 @@
 import urllib.parse
 import urllib.request
 from collections import namedtuple
+from typing import Tuple, List, Dict, Any
 
 from common import common_def
 
@@ -8,11 +9,16 @@ origin = "news"
 
 
 # naver의 검색 api를 이용한 크롤링 함수
-def search_news_api(search_term, count, client_id, client_secret):
+def search_news_api(search_term: str,
+                    count: int,
+                    client_id: str,
+                    client_secret: str
+                    ) -> Tuple[str, List[Dict[str, Any]]]:
     enc_text = urllib.parse.quote(search_term)
     url = f"https://openapi.naver.com/v1/search/news?query={enc_text}&display={count}"  # JSON 결과
     print(url)
-    return common_def.search_api(client_id, client_secret, url)
+    data = common_def.search_api(client_id, client_secret, url)
+    return "news", data
 
 
 # 검색 api의 결과에서 data('title', 'url', 'post_date', 'file_path', 'data_id')를 추출하는 함수

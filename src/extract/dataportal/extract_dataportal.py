@@ -1,17 +1,24 @@
 import json
+import os.path
+import tempfile
 from datetime import datetime
+from typing import Dict, Tuple, List, Any
 from urllib.parse import urlencode
 
 import requests
 
-from common.common_def import make_file_path
 from load.load_data import minio_load
 
 origin = 'portal'
 
 
-def get_data_portal(minio_url, minio_access_key, minio_secret_key, data_portal_base_url: str, endpoint,
-                    data_portal_params=None):
+def get_data_portal(minio_url: str,
+                    minio_access_key: str,
+                    minio_secret_key: str,
+                    data_portal_base_url: str,
+                    endpoint: str,
+                    data_portal_params: dict = None)\
+        -> Tuple[str, List[Dict[str, Any]]]:
     """
     공공 데이터 포털 API에서 데이터를 가져옵니다.
 
@@ -26,14 +33,15 @@ def get_data_portal(minio_url, minio_access_key, minio_secret_key, data_portal_b
     params = urlencode(data_portal_params)
     url = f"{data_portal_base_url}{endpoint}"
     data = {}
-
-    try:
-        response = requests.get(url, params=params)
-        if endpoint[0] == "/":
-            data_id = endpoint.replace("/", "_")[1:]
-        else:
-            data_id = endpoint.replace("/", "_")
-        file_path = make_file_path("dataportal", data_id)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        try:
+            response = requests.get(url, params=params)
+        except requests.exceptions.HTTPError as http_err:
+            print(f"HTTP error occurred: {http_err}")
+        except Exception as err:
+            print(f"An error occurred: {err}")
+        data_id = endpoint.lstrip("/").replace("/", "_")
+        tmp_file_path = os.path.join(tmpdir, data_id)
         data["url"] = f"{url}?{params}"
         data["data_id"] = data_id
         data["origin"] = origin
@@ -41,20 +49,20 @@ def get_data_portal(minio_url, minio_access_key, minio_secret_key, data_portal_b
 
         if response.status_code == 200:
             try:
-                with open(file_path, "w", encoding="utf-8") as f:
+                with open(tmp_file_path, "w", encoding="utf-8") as f:
                     json.dump(response.json(), f, ensure_ascii=False, indent=4)
             except EOFError as e:
                 print(f"파일 저장 실패: {e}")
 
-            data["file_path"] = minio_load(minio_url, minio_access_key, minio_secret_key, "dataportal", file_path)
-            return data
+            data["file_path"] = minio_load(minio_url,
+                                           minio_access_key,
+                                           minio_secret_key,
+                                           "dataportal",
+                                           tmp_file_path)
+            return "portal", [data]
         else:
-            raise Exception(f"해당 url을 불러오는 데에 실패하였습니다.")
-    except requests.exceptions.HTTPError as http_err:
-        print(f"HTTP error occurred: {http_err}")
-    except Exception as err:
-        print(f"An error occurred: {err}")
-    return None
+            print(f"해당 url을 불러오는 데에 실패하였습니다.")
+    return "portal", []
 
 
 if __name__ == "__main__":
