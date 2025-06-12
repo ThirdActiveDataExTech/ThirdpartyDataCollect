@@ -168,12 +168,14 @@ def load(*data: Tuple[str, List[Dict[str, Any]]],
                    f"ON CONFLICT (data_id) DO NOTHING")
             try:
                 postgres_cur.executemany(sql, values)
+                result[table_name] = postgres_cur.rowcount
+                postgres_conn.commit()
             except psycopg2.Error as e:
                 print(e)
+                postgres_conn.rollback()
+                result[table_name] = 0
                 continue
-            result[table_name] = postgres_cur.rowcount
 
-    postgres_conn.commit()
     return result
 
 
