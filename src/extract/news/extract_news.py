@@ -5,6 +5,7 @@ import urllib.request
 from typing import Tuple, List, Dict, Any
 
 from common import common_def
+from load.load_data import minio_load
 
 origin = "news"
 
@@ -29,7 +30,6 @@ def get_news_list(search_response: List[Dict[str, Any]],
                   minio_access_key: str,
                   minio_secret_key: str
                   ) -> Tuple[str, List[Dict[str, Any]]]:
-    from load.load_data import minio_load
     news_list = []
     for item in search_response:
         data_id = common_def.get_data_id(origin, item.get("link"))
@@ -41,11 +41,11 @@ def get_news_list(search_response: List[Dict[str, Any]],
         with tempfile.TemporaryDirectory() as tmpdir:
             temp_file_path = os.path.join(tmpdir, f"{data_id}.txt")
             common_def.write_file_of_web(temp_file_path, page)
-        file_path = minio_load(minio_url,
-                               minio_access_key,
-                               minio_secret_key,
-                               origin,
-                               temp_file_path)
+            file_path = minio_load(minio_url,
+                                   minio_access_key,
+                                   minio_secret_key,
+                                   origin,
+                                   temp_file_path)
 
         news_list.append({
             "title": title,

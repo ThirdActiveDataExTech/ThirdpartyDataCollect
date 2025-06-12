@@ -43,11 +43,11 @@ def get_blog_list(search_response: List[Dict[str, Any]],
         with tempfile.TemporaryDirectory() as tmpdir:
             temp_file_path = os.path.join(tmpdir, f"{data_id}.txt")
             common_def.write_file_of_web(temp_file_path, page)
-        file_path = minio_load(minio_url,
-                               minio_access_key,
-                               minio_secret_key,
-                               origin,
-                               temp_file_path)
+            file_path = minio_load(minio_url,
+                                   minio_access_key,
+                                   minio_secret_key,
+                                   origin,
+                                   temp_file_path)
 
         blog_list.append({
             "post_url": post_url,
