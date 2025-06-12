@@ -17,7 +17,7 @@ def get_data_portal(minio_url: str,
                     minio_secret_key: str,
                     data_portal_base_url: str,
                     endpoint: str,
-                    data_portal_params: dict = None)\
+                    data_portal_params: dict = None) \
         -> Tuple[str, List[Dict[str, Any]]]:
     """
     공공 데이터 포털 API에서 데이터를 가져옵니다.
@@ -43,7 +43,7 @@ def get_data_portal(minio_url: str,
         data_id = endpoint.lstrip("/").replace("/", "_")
         tmp_file_path = os.path.join(tmpdir, data_id)
         data["url"] = f"{url}?{params}"
-        data["data_id"] = data_id
+        data["id"] = data_id
         data["origin"] = origin
         data["date"] = datetime.now().date()
 

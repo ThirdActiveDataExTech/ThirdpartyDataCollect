@@ -36,24 +36,18 @@ def search_api(client_id: str, client_secret: str, url: str):
 
 
 # url의 내용을 크롤링하는 함수
-def get_crawling_file(origin, url, file_name):
+def get_crawling_file(origin, url) -> BeautifulSoup:
     if origin == 'blog':
-        # URL 유효성 체크
-        url = url[0:8] + 'm.' + url[8:]
+        # 모바일 블로그로 변환
+        url = re.sub(r"^(https?://)?(?!m\.)blog\.naver\.com", r"\1m.blog.naver.com", url)
+    response = requests.get(url, timeout=5)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    return soup
 
-    try:
-        status_check(url)
-    except requests.exceptions.HTTPError:
-        raise
 
-    try:
-        page = read_web(url)
-    except requests.exceptions.HTTPError:
-        raise
-
-    file_path = load_to_file(origin, page, file_name)
-
-    return file_path
+def write_file_of_web(file_path: str, soup: BeautifulSoup):
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(soup.get_text(), f, ensure_ascii=False, indent=4)
 
 
 def read_web(url):
@@ -91,7 +85,7 @@ def load_to_file(origin, page, file_name):
 
 
 # blog data_id 추출 함수
-def get_data_id(origin, url):
+def get_data_id(origin, url) -> str:
     if origin == "blog":
         # blog url은 https://blog.naver.com/ms_hs-93/223780771002" 형식
         match = re.search(r"blog.naver.com/([a-zA-Z0-9_-]+)/([0-9]+)", url)
@@ -123,5 +117,7 @@ def get_data_id(origin, url):
             return match.group(1)
         else:
             log.info("data_id 추출 실패 - 올바르지 않은 youtube url 형식")
+            return ""
     else:
         log.info("data_id 추출 실패 - 지원하지 않는 데이터 원천")
+        return ""
